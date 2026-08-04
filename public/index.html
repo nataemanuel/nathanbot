@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>NathanBot</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="chat-container">
+
+    <!-- OVERLAY MOBILE -->
+    <div
+        class="modal-overlay"
+        id="modalOverlay"
+        onclick="toggleSidebar()">
+    </div>
+
+
+    <!-- SIDEBAR -->
+    <div
+        class="sidebar"
+        id="sidebarMenu">
+
+        <div class="sidebar-header-container">
+
+            <button
+                class="btn-new-chat"
+                onclick="startNewChat()">
+                + Nova Conversa
+            </button>
+
+            <button
+                class="btn-delete-history"
+                onclick="clearCurrentHistory()">
+                Apagar Conversa Atual
+            </button>
+
+        </div>
+
+        <div
+            class="sidebar-content"
+            id="historyContent">
+        </div>
+
+    </div>
+
+
+    <!-- CHAT PRINCIPAL -->
+    <div class="main-chat">
+
+        <div class="chat-header">
+
+            <button
+                class="btn-menu-mobile"
+                onclick="toggleSidebar()">
+                ☰
+            </button>
+
+
+            <div>
+
+                <h3>NathanBot</h3>
+
+                <span id="chat-status">
+                    Nova sessão
+                </span>
+
+            </div>
+
+
+            <!-- USUÁRIO -->
+            <div class="user-area">
+
+    <button
+        class="user-avatar"
+        id="userAvatar"
+        onclick="toggleUserMenu()"
+        title="Minha conta">
+        U
+    </button>
+
+    <div
+        class="user-menu"
+        id="userMenu">
+
+        <div class="user-menu-info">
+
+            <strong id="userName">
+                Usuário
+            </strong>
+
+            <span id="userEmail">
+                email@email.com
+            </span>
+
+        </div>
+
+        <div class="user-menu-divider"></div>
+
+        <button
+            class="logout-button"
+            onclick="logout()">
+
+            <span>↪</span>
+            Sair da conta
+
+        </button>
+
+    </div>
+
+</div>
+
+        </div>
+
+
+        <!-- INDICADOR DIGITANDO -->
+
+        <div
+            class="typing-indicator"
+            id="typingBubble"
+            style="display:none;">
+
+            <span></span>
+            <span></span>
+            <span></span>
+
+        </div>
+
+
+        <!-- MENSAGENS -->
+
+        <div
+            class="chat-messages"
+            id="chatbox">
+        </div>
+
+
+        <!-- INPUT -->
+
+        <div class="chat-input-area">
+
+            <input
+                type="text"
+                id="userInput"
+                placeholder="Digite sua mensagem aqui..."
+                autocomplete="off"
+                onkeydown="if(event.key === 'Enter') sendMessage()"
+            >
+
+
+            <button onclick="sendMessage()">
+                Enviar
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>

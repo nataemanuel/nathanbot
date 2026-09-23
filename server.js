@@ -4,6 +4,8 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const path = require("path");
+const multer = require("multer");
+const pdfParse = require("pdf-parse");
 
 const { GoogleGenAI } = require("@google/genai");
 
@@ -15,19 +17,52 @@ const jwt = require("jsonwebtoken");
 
 const app = express();
 
+
+// ==========================================
+// CONFIGURAÇÕES
+// ==========================================
+
 app.use(cors());
+
 app.use(express.json());
 
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.urlencoded({
+  extended: true
+}));
+
+app.use(express.static(
+  path.join(__dirname, "public")
+));
 
 
 // ==========================================
-// CONEXÃO COM MONGODB
+// UPLOAD DE DOCUMENTOS
 // ==========================================
 
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log("MongoDB conectado"))
-  .catch(err => console.log("Erro MongoDB:", err));
+const upload = multer({
+
+  storage: multer.memoryStorage(),
+
+  limits: {
+    fileSize: 10 * 1024 * 1024
+  },
+
+  fileFilter: (req, file, cb) => {
+
+    const tiposPermitidos = [
+      "application/pdf",
+      "text/plain"
+    ];
+
+    if (tiposPermitidos.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Apenas arquivos PDF ou TXT são permitidos."));
+    }
+
+  }
+
+});
 
 
 // ==========================================
@@ -35,8 +70,25 @@ mongoose.connect(process.env.MONGODB_URI)
 // ==========================================
 
 const ai = new GoogleGenAI({
+
   apiKey: process.env.GEMINI_API_KEY
+
 });
+
+
+// ==========================================
+// CONEXÃO COM MONGODB
+// ==========================================
+
+mongoose.connect(process.env.MONGODB_URI)
+
+  .then(() => {
+    console.log("MongoDB conectado");
+  })
+
+  .catch((error) => {
+    console.log("Erro MongoDB:", error);
+  });
 
 
 // ==========================================
@@ -47,21 +99,33 @@ function autenticarToken(req, res, next) {
 
   const authHeader = req.headers.authorization;
 
+
   if (!authHeader) {
+
     return res.status(401).json({
       error: "Acesso negado. Faça login."
     });
+
   }
+
 
   const partes = authHeader.split(" ");
 
-  if (partes.length !== 2 || partes[0] !== "Bearer") {
+
+  if (
+    partes.length !== 2 ||
+    partes[0] !== "Bearer"
+  ) {
+
     return res.status(401).json({
       error: "Token inválido."
     });
+
   }
 
+
   const token = partes[1];
+
 
   try {
 
@@ -70,9 +134,12 @@ function autenticarToken(req, res, next) {
       process.env.JWT_SECRET
     );
 
+
     req.user = usuario;
 
+
     next();
+
 
   } catch (error) {
 
@@ -93,7 +160,12 @@ app.post("/cadastro", async (req, res) => {
 
   try {
 
-    const { name, email, password } = req.body;
+    const {
+      name,
+      email,
+      password
+    } = req.body;
+
 
     if (!name || !email || !password) {
 
@@ -103,6 +175,7 @@ app.post("/cadastro", async (req, res) => {
 
     }
 
+
     if (password.length < 6) {
 
       return res.status(400).json({
@@ -111,13 +184,17 @@ app.post("/cadastro", async (req, res) => {
 
     }
 
+
     const emailNormalizado = email
       .trim()
       .toLowerCase();
 
-    const usuarioExistente = await User.findOne({
-      email: emailNormalizado
-    });
+
+    const usuarioExistente =
+      await User.findOne({
+        email: emailNormalizado
+      });
+
 
     if (usuarioExistente) {
 
@@ -127,20 +204,25 @@ app.post("/cadastro", async (req, res) => {
 
     }
 
-    const senhaCriptografada = await bcrypt.hash(
-      password,
-      10
-    );
 
-    const usuario = await User.create({
+    const senhaCriptografada =
+      await bcrypt.hash(
+        password,
+        10
+      );
 
-      name: name.trim(),
 
-      email: emailNormalizado,
+    const usuario =
+      await User.create({
 
-      password: senhaCriptografada
+        name: name.trim(),
 
-    });
+        email: emailNormalizado,
+
+        password: senhaCriptografada
+
+      });
+
 
     res.status(201).json({
 
@@ -158,12 +240,19 @@ app.post("/cadastro", async (req, res) => {
 
     });
 
+
   } catch (error) {
 
-    console.error("Erro no cadastro:", error);
+    console.error(
+      "Erro no cadastro:",
+      error
+    );
+
 
     res.status(500).json({
+
       error: "Erro ao criar usuário."
+
     });
 
   }
@@ -179,7 +268,11 @@ app.post("/login", async (req, res) => {
 
   try {
 
-    const { email, password } = req.body;
+    const {
+      email,
+      password
+    } = req.body;
+
 
     if (!email || !password) {
 
@@ -189,13 +282,17 @@ app.post("/login", async (req, res) => {
 
     }
 
+
     const emailNormalizado = email
       .trim()
       .toLowerCase();
 
-    const usuario = await User.findOne({
-      email: emailNormalizado
-    });
+
+    const usuario =
+      await User.findOne({
+        email: emailNormalizado
+      });
+
 
     if (!usuario) {
 
@@ -205,10 +302,13 @@ app.post("/login", async (req, res) => {
 
     }
 
-    const senhaCorreta = await bcrypt.compare(
-      password,
-      usuario.password
-    );
+
+    const senhaCorreta =
+      await bcrypt.compare(
+        password,
+        usuario.password
+      );
+
 
     if (!senhaCorreta) {
 
@@ -218,13 +318,13 @@ app.post("/login", async (req, res) => {
 
     }
 
+
     const token = jwt.sign(
 
       {
         id: usuario._id.toString(),
 
         email: usuario.email
-
       },
 
       process.env.JWT_SECRET,
@@ -235,9 +335,11 @@ app.post("/login", async (req, res) => {
 
     );
 
+
     res.json({
 
-      message: "Login realizado com sucesso!",
+      message:
+        "Login realizado com sucesso!",
 
       token,
 
@@ -253,12 +355,20 @@ app.post("/login", async (req, res) => {
 
     });
 
+
   } catch (error) {
 
-    console.error("Erro no login:", error);
+    console.error(
+      "Erro no login:",
+      error
+    );
+
 
     res.status(500).json({
-      error: "Erro ao realizar login."
+
+      error:
+        "Erro ao realizar login."
+
     });
 
   }
@@ -267,119 +377,370 @@ app.post("/login", async (req, res) => {
 
 
 // ==========================================
-// CHAT
+// CHAT NORMAL
 // ==========================================
 
-app.post("/chat", autenticarToken, async (req, res) => {
+app.post(
+  "/chat",
+  autenticarToken,
+  async (req, res) => {
 
-  try {
+    try {
 
-    const { message, sessionId } = req.body;
+      const {
+        message,
+        sessionId
+      } = req.body;
 
-    if (!message || !sessionId) {
 
-      return res.status(400).json({
-        error: "Mensagem ou sessão inválida."
+      if (!message || !sessionId) {
+
+        return res.status(400).json({
+
+          error:
+            "Mensagem ou sessão inválida."
+
+        });
+
+      }
+
+
+      const userId = req.user.id;
+
+
+      // --------------------------------------
+      // SALVA MENSAGEM DO USUÁRIO
+      // --------------------------------------
+
+      await Message.create({
+
+        userId,
+
+        sessionId,
+
+        role: "user",
+
+        text: message
+
+      });
+
+
+      // --------------------------------------
+      // BUSCA HISTÓRICO
+      // --------------------------------------
+
+      const history =
+        await Message.find({
+
+          userId,
+
+          sessionId
+
+        }).sort({
+
+          createdAt: 1
+
+        });
+
+
+      // --------------------------------------
+      // CONVERTE PARA FORMATO DO GEMINI
+      // --------------------------------------
+
+      const contents =
+        history.map(msg => ({
+
+          role:
+            msg.role === "user"
+              ? "user"
+              : "model",
+
+          parts: [
+
+            {
+              text: msg.text
+            }
+
+          ]
+
+        }));
+
+
+      // --------------------------------------
+      // GEMINI
+      // --------------------------------------
+
+      const response =
+        await ai.models.generateContent({
+
+          model: "gemini-flash-lite-latest",
+
+          contents
+
+        });
+
+
+      const botReply =
+        response.text;
+
+
+      // --------------------------------------
+      // SALVA RESPOSTA DO BOT
+      // --------------------------------------
+
+      await Message.create({
+
+        userId,
+
+        sessionId,
+
+        role: "assistant",
+
+        text: botReply
+
+      });
+
+
+      res.json({
+
+        reply: botReply
+
+      });
+
+
+    } catch (error) {
+
+      console.error(
+        "Erro no chat:",
+        error
+      );
+
+
+      res.status(500).json({
+
+        error:
+          "Erro ao gerar resposta."
+
       });
 
     }
 
-    const userId = req.user.id;
+  }
+);
 
 
-    // Salva mensagem do usuário
+// ==========================================
+// CHAT COM PDF / TXT
+// ==========================================
 
-    await Message.create({
+app.post(
+  "/api/perguntar-documento",
+  autenticarToken,
+  upload.single("documento"),
 
-      userId,
+  async (req, res) => {
 
-      sessionId,
+    try {
 
-      role: "user",
+      // --------------------------------------
+      // VERIFICA ARQUIVO
+      // --------------------------------------
 
-      text: message
+      if (!req.file) {
 
-    });
+        return res.status(400).json({
 
+          erro:
+            "Nenhum documento foi enviado."
 
-    // Busca SOMENTE mensagens desse usuário
+        });
 
-    const history = await Message.find({
-
-      userId,
-
-      sessionId
-
-    }).sort({
-
-      createdAt: 1
-
-    });
-
-
-    const contents = history.map(msg => ({
-
-      role: msg.role === "user"
-        ? "user"
-        : "model",
-
-      parts: [
-        {
-          text: msg.text
-        }
-      ]
-
-    }));
+      }
 
 
-    // Gemini
+      // --------------------------------------
+      // VERIFICA PERGUNTA
+      // --------------------------------------
 
-    const response = await ai.models.generateContent({
-
-      model: "gemini-flash-lite-latest",
-
-      contents
-
-    });
+      const pergunta =
+        req.body.pergunta;
 
 
-    const botReply = response.text;
+      if (
+        !pergunta ||
+        !pergunta.trim()
+      ) {
+
+        return res.status(400).json({
+
+          erro:
+            "Digite uma pergunta."
+
+        });
+
+      }
 
 
-    // Salva resposta do bot
+      // --------------------------------------
+      // EXTRAI TEXTO
+      // --------------------------------------
 
-    await Message.create({
-
-      userId,
-
-      sessionId,
-
-      role: "assistant",
-
-      text: botReply
-
-    });
+      let textoDocumento = "";
 
 
-    res.json({
+      // PDF
+      if (
+        req.file.mimetype ===
+        "application/pdf"
+      ) {
 
-      reply: botReply
+        const resultado =
+          await pdfParse(
+            req.file.buffer
+          );
 
-    });
 
-  } catch (error) {
+        textoDocumento =
+          resultado.text;
 
-    console.error("Erro no chat:", error);
+      }
 
-    res.status(500).json({
 
-      error: "Erro ao gerar resposta."
+      // TXT
+      else if (
+        req.file.mimetype ===
+        "text/plain"
+      ) {
 
-    });
+        textoDocumento =
+          req.file.buffer.toString(
+            "utf-8"
+          );
+
+      }
+
+
+      // OUTRO ARQUIVO
+      else {
+
+        return res.status(400).json({
+
+          erro:
+            "Envie apenas arquivos PDF ou TXT."
+
+        });
+
+      }
+
+
+      // --------------------------------------
+      // VERIFICA SE EXISTE TEXTO
+      // --------------------------------------
+
+      if (
+        !textoDocumento ||
+        !textoDocumento.trim()
+      ) {
+
+        return res.status(400).json({
+
+          erro:
+            "Não foi possível encontrar texto no documento."
+
+        });
+
+      }
+
+
+      // --------------------------------------
+      // PROMPT DO GEMINI
+      // --------------------------------------
+
+      const prompt = `
+
+Você é um analista.
+
+REGRA ABSOLUTA:
+
+Responda à pergunta do usuário ÚNICA E EXCLUSIVAMENTE
+com base no conteúdo do documento fornecido.
+
+Não use conhecimentos externos.
+
+Não invente informações.
+
+Não faça suposições.
+
+Não complete informações que não estejam presentes
+no documento.
+
+Se a resposta não estiver no documento, responda:
+
+"Essa informação não está presente no documento."
+
+DOCUMENTO:
+========================================
+
+${textoDocumento}
+
+========================================
+
+PERGUNTA DO USUÁRIO:
+
+${pergunta}
+
+`;
+
+
+      // --------------------------------------
+      // ENVIA PARA O GEMINI
+      // --------------------------------------
+
+      const response =
+        await ai.models.generateContent({
+
+          model: "gemini-2.5-flash",
+
+          contents: prompt
+
+        });
+
+
+      const resposta =
+        response.text;
+
+
+      // --------------------------------------
+      // RETORNA RESPOSTA
+      // --------------------------------------
+
+      res.json({
+
+        resposta: resposta
+
+      });
+
+
+    } catch (error) {
+
+  console.error("=================================");
+  console.error("ERRO AO PROCESSAR DOCUMENTO");
+  console.error("=================================");
+  console.error("Nome:", error.name);
+  console.error("Mensagem:", error.message);
+  console.error("Stack:", error.stack);
+
+  res.status(500).json({
+
+    erro: "Erro ao processar o documento.",
+    detalhe: error.message
+
+  });
+
+}
 
   }
-
-});
+);
 
 
 // ==========================================
@@ -389,37 +750,48 @@ app.post("/chat", autenticarToken, async (req, res) => {
 app.get(
   "/historico/:sessionId",
   autenticarToken,
+
   async (req, res) => {
 
     try {
 
-      const { sessionId } = req.params;
-
-      const userId = req.user.id;
-
-
-      const historico = await Message.find({
-
-        userId,
-
+      const {
         sessionId
-
-      }).sort({
-
-        createdAt: 1
-
-      });
+      } = req.params;
 
 
-      res.json(historico);
+      const userId =
+        req.user.id;
+
+
+      const historico =
+        await Message.find({
+
+          userId,
+
+          sessionId
+
+        }).sort({
+
+          createdAt: 1
+
+        });
+
+
+      res.json(
+        historico
+      );
+
 
     } catch (error) {
 
       console.error(error);
 
+
       res.status(500).json({
 
-        error: "Erro ao buscar histórico."
+        error:
+          "Erro ao buscar histórico."
 
       });
 
@@ -436,13 +808,18 @@ app.get(
 app.delete(
   "/historico/:sessionId",
   autenticarToken,
+
   async (req, res) => {
 
     try {
 
-      const { sessionId } = req.params;
+      const {
+        sessionId
+      } = req.params;
 
-      const userId = req.user.id;
+
+      const userId =
+        req.user.id;
 
 
       await Message.deleteMany({
@@ -456,17 +833,21 @@ app.delete(
 
       res.json({
 
-        message: "Histórico apagado com sucesso!"
+        message:
+          "Histórico apagado com sucesso!"
 
       });
+
 
     } catch (error) {
 
       console.error(error);
 
+
       res.status(500).json({
 
-        error: "Erro ao apagar histórico."
+        error:
+          "Erro ao apagar histórico."
 
       });
 
@@ -483,71 +864,89 @@ app.delete(
 app.get(
   "/historico/lista/sessoes",
   autenticarToken,
+
   async (req, res) => {
 
     try {
 
-      const userId = req.user.id;
+      const userId =
+        req.user.id;
 
 
-      const sessoes = await Message.aggregate([
+      const sessoes =
+        await Message.aggregate([
 
-        {
-          $match: {
+          {
+            $match: {
 
-            userId: new mongoose.Types.ObjectId(userId)
+              userId:
+                new mongoose.Types.ObjectId(
+                  userId
+                )
 
-          }
+            }
 
-        },
+          },
 
-        {
-          $sort: {
+          {
 
-            createdAt: 1
+            $sort: {
 
-          }
+              createdAt: 1
 
-        },
+            }
 
-        {
-          $group: {
+          },
 
-            _id: "$sessionId",
+          {
 
-            titulo: {
-              $first: "$text"
-            },
+            $group: {
 
-            dataCriacao: {
-              $first: "$createdAt"
+              _id: "$sessionId",
+
+              titulo: {
+
+                $first: "$text"
+
+              },
+
+              dataCriacao: {
+
+                $first: "$createdAt"
+
+              }
+
+            }
+
+          },
+
+          {
+
+            $sort: {
+
+              dataCriacao: -1
+
             }
 
           }
 
-        },
-
-        {
-          $sort: {
-
-            dataCriacao: -1
-
-          }
-
-        }
-
-      ]);
+        ]);
 
 
-      res.json(sessoes);
+      res.json(
+        sessoes
+      );
+
 
     } catch (error) {
 
       console.error(error);
 
+
       res.status(500).json({
 
-        error: "Erro ao listar sessões de chat."
+        error:
+          "Erro ao listar sessões de chat."
 
       });
 
@@ -558,15 +957,79 @@ app.get(
 
 
 // ==========================================
+// TRATAMENTO DE ERRO DO UPLOAD
+// ==========================================
+
+app.use(
+  (error, req, res, next) => {
+
+    if (
+      error instanceof multer.MulterError
+    ) {
+
+      if (
+        error.code ===
+        "LIMIT_FILE_SIZE"
+      ) {
+
+        return res.status(400).json({
+
+          erro:
+            "O arquivo é muito grande. O limite é 10 MB."
+
+        });
+
+      }
+
+    }
+
+
+    if (
+      error &&
+      error.message ===
+      "Apenas arquivos PDF ou TXT são permitidos."
+    ) {
+
+      return res.status(400).json({
+
+        erro:
+          "Apenas arquivos PDF ou TXT são permitidos."
+
+      });
+
+    }
+
+
+    console.error(error);
+
+
+    res.status(500).json({
+
+      erro:
+        "Erro interno do servidor."
+
+    });
+
+  }
+);
+
+
+// ==========================================
 // SERVIDOR
 // ==========================================
 
-const PORT = process.env.PORT || 3000;
+const PORT =
+  process.env.PORT || 3000;
 
-app.listen(PORT, () => {
 
-  console.log(
-    `Servidor rodando na porta ${PORT}`
-  );
+app.listen(
+  PORT,
 
-});
+  () => {
+
+    console.log(
+      `Servidor rodando na porta ${PORT}`
+    );
+
+  }
+);

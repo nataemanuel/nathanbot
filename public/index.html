@@ -14,7 +14,10 @@
 
 <div class="chat-container">
 
-    <!-- OVERLAY MOBILE -->
+    <!-- ==========================================
+         OVERLAY MOBILE
+    =========================================== -->
+
     <div
         class="modal-overlay"
         id="modalOverlay"
@@ -22,7 +25,10 @@
     </div>
 
 
-    <!-- SIDEBAR -->
+    <!-- ==========================================
+         SIDEBAR
+    =========================================== -->
+
     <div
         class="sidebar"
         id="sidebarMenu">
@@ -30,18 +36,22 @@
         <div class="sidebar-header-container">
 
             <button
+                type="button"
                 class="btn-new-chat"
                 onclick="startNewChat()">
                 + Nova Conversa
             </button>
 
+
             <button
+                type="button"
                 class="btn-delete-history"
                 onclick="clearCurrentHistory()">
                 Apagar Conversa Atual
             </button>
 
         </div>
+
 
         <div
             class="sidebar-content"
@@ -51,17 +61,31 @@
     </div>
 
 
-    <!-- CHAT PRINCIPAL -->
+    <!-- ==========================================
+         CHAT PRINCIPAL
+    =========================================== -->
+
     <div class="main-chat">
+
+
+        <!-- ======================================
+             CABEÇALHO
+        ======================================= -->
 
         <div class="chat-header">
 
+
+            <!-- MENU MOBILE -->
+
             <button
+                type="button"
                 class="btn-menu-mobile"
                 onclick="toggleSidebar()">
                 ☰
             </button>
 
+
+            <!-- TÍTULO -->
 
             <div>
 
@@ -74,57 +98,73 @@
             </div>
 
 
-            <!-- USUÁRIO -->
+            <!-- ==================================
+                 USUÁRIO
+            =================================== -->
+
             <div class="user-area">
 
-    <button
-        class="user-avatar"
-        id="userAvatar"
-        onclick="toggleUserMenu()"
-        title="Minha conta">
-        U
-    </button>
 
-    <div
-        class="user-menu"
-        id="userMenu">
+                <button
+                    type="button"
+                    class="user-avatar"
+                    id="userAvatar"
+                    onclick="toggleUserMenu()"
+                    title="Minha conta">
+                    U
+                </button>
 
-        <div class="user-menu-info">
 
-            <strong id="userName">
-                Usuário
-            </strong>
+                <div
+                    class="user-menu"
+                    id="userMenu">
 
-            <span id="userEmail">
-                email@email.com
-            </span>
+
+                    <div class="user-menu-info">
+
+                        <strong id="userName">
+                            Usuário
+                        </strong>
+
+
+                        <span id="userEmail">
+                            email@email.com
+                        </span>
+
+                    </div>
+
+
+                    <div
+                        class="user-menu-divider">
+                    </div>
+
+
+                    <button
+                        type="button"
+                        class="logout-button"
+                        onclick="logout()">
+
+                        <span>↪</span>
+
+                        Sair da conta
+
+                    </button>
+
+                </div>
+
+            </div>
 
         </div>
 
-        <div class="user-menu-divider"></div>
 
-        <button
-            class="logout-button"
-            onclick="logout()">
-
-            <span>↪</span>
-            Sair da conta
-
-        </button>
-
-    </div>
-
-</div>
-
-        </div>
-
-
-        <!-- INDICADOR DIGITANDO -->
+        <!-- ==========================================
+             INDICADOR DIGITANDO
+        =========================================== -->
 
         <div
             class="typing-indicator"
             id="typingBubble"
-            style="display:none;">
+            style="display: none;">
 
             <span></span>
             <span></span>
@@ -133,7 +173,9 @@
         </div>
 
 
-        <!-- MENSAGENS -->
+        <!-- ==========================================
+             MENSAGENS
+        =========================================== -->
 
         <div
             class="chat-messages"
@@ -141,21 +183,100 @@
         </div>
 
 
-        <!-- INPUT -->
+        <!-- ==========================================
+             ARQUIVO SELECIONADO
+        =========================================== -->
+
+        <div
+            id="selectedFile"
+            class="selected-file"
+            style="display: none;">
+
+            <span id="selectedFileName"></span>
+
+
+            <button
+                type="button"
+                onclick="removeSelectedFile()"
+                title="Remover arquivo">
+
+                ✕
+
+            </button>
+
+        </div>
+
+
+        <!-- ==========================================
+             ÁREA DE INPUT
+        =========================================== -->
 
         <div class="chat-input-area">
+
+
+            <!-- ======================================
+                 BOTÃO ANEXAR
+            ======================================= -->
+
+  <label
+    for="fileInput"
+    class="file-button"
+    title="Anexar documento">
+
+    <svg
+        width="21"
+        height="21"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg">
+
+        <path
+            d="M21.44 11.05L12.25 20.24C10.17 22.32 6.79 22.32 4.71 20.24C2.63 18.16 2.63 14.78 4.71 12.7L13.9 3.51C15.29 2.12 17.54 2.12 18.93 3.51C20.32 4.9 20.32 7.15 18.93 8.54L9.74 17.73C9.05 18.42 7.93 18.42 7.24 17.73C6.55 17.04 6.55 15.92 7.24 15.23L15.72 6.75"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"/>
+
+    </svg>
+
+</label>
+
+
+            <!-- ======================================
+                 INPUT DO ARQUIVO
+            ======================================= -->
+
+            <input
+                type="file"
+                id="fileInput"
+                accept=".pdf,.txt,application/pdf,text/plain"
+                style="display: none;"
+            >
+
+
+            <!-- ======================================
+                 CAMPO DA PERGUNTA
+            ======================================= -->
 
             <input
                 type="text"
                 id="userInput"
-                placeholder="Digite sua mensagem aqui..."
+                placeholder="Digite sua pergunta aqui..."
                 autocomplete="off"
-                onkeydown="if(event.key === 'Enter') sendMessage()"
             >
 
 
-            <button onclick="sendMessage()">
+            <!-- ======================================
+                 BOTÃO ENVIAR
+            ======================================= -->
+
+            <button
+                type="button"
+                id="sendButton"
+                onclick="sendMessage()">
+
                 Enviar
+
             </button>
 
         </div>
@@ -165,7 +286,12 @@
 </div>
 
 
-<script src="script.js"></script>
+<!-- ==========================================
+     JAVASCRIPT
+=========================================== -->
+
+<script src="/script.js"></script>
 
 </body>
+
 </html>

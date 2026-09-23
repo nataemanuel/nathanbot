@@ -1,3 +1,4 @@
+
 // ==========================================
 // VERIFICAR LOGIN
 // ==========================================
@@ -5,15 +6,14 @@
 const token = localStorage.getItem("token");
 
 if (!token) {
-
     window.location.href = "/login.html";
-
 }
 
 
 // ==========================================
 // DADOS DO USUÁRIO
 // ==========================================
+
 const userData = JSON.parse(
     localStorage.getItem("user") || "null"
 );
@@ -31,35 +31,32 @@ if (userData) {
 
 
     if (userName) {
-
         userName.textContent =
             userData.name;
-
     }
 
 
     if (userEmail) {
-
         userEmail.textContent =
             userData.email;
-
     }
 
 
     if (userAvatar) {
-
         userAvatar.textContent =
             getInitials(userData.name);
-
     }
 
 }
+
+
 function getInitials(name) {
 
     if (!name) return "U";
 
     const names =
         name.trim().split(/\s+/);
+
 
     if (names.length === 1) {
 
@@ -69,40 +66,56 @@ function getInitials(name) {
 
     }
 
+
     return (
         names[0][0] +
         names[names.length - 1][0]
     ).toUpperCase();
 
 }
+
+
+// ==========================================
+// MENU DO USUÁRIO
+// ==========================================
+
 function toggleUserMenu() {
 
     const menu =
         document.getElementById("userMenu");
 
-    menu.classList.toggle("active");
-
-}
-document.addEventListener("click", function(event) {
-
-    const userArea =
-        document.querySelector(".user-area");
-
-    const menu =
-        document.getElementById("userMenu");
-
-
-    if (
-        userArea &&
-        menu &&
-        !userArea.contains(event.target)
-    ) {
-
-        menu.classList.remove("active");
-
+    if (menu) {
+        menu.classList.toggle("active");
     }
 
-});
+}
+
+
+document.addEventListener(
+    "click",
+    function(event) {
+
+        const userArea =
+            document.querySelector(".user-area");
+
+        const menu =
+            document.getElementById("userMenu");
+
+
+        if (
+            userArea &&
+            menu &&
+            !userArea.contains(event.target)
+        ) {
+
+            menu.classList.remove("active");
+
+        }
+
+    }
+);
+
+
 // ==========================================
 // SESSION ID
 // ==========================================
@@ -114,7 +127,7 @@ let currentSessionId = "";
 // INICIAR PÁGINA
 // ==========================================
 
-window.onload = function () {
+window.onload = function() {
 
     startNewChat();
 
@@ -135,6 +148,9 @@ function startNewChat() {
 
     const chatbox =
         document.getElementById("chatbox");
+
+
+    if (!chatbox) return;
 
 
     chatbox.innerHTML = "";
@@ -171,12 +187,21 @@ function startNewChat() {
     chatbox.appendChild(welcome);
 
 
-    document.getElementById(
-        "chat-status"
-    ).innerText = "Conversa Ativa";
+    const status =
+        document.getElementById("chat-status");
+
+
+    if (status) {
+
+        status.innerText =
+            "Conversa Ativa";
+
+    }
 
 
     hideTyping();
+
+    removeSelectedFile();
 
 }
 
@@ -188,9 +213,7 @@ function startNewChat() {
 function showTyping() {
 
     const bubble =
-        document.getElementById(
-            "typingBubble"
-        );
+        document.getElementById("typingBubble");
 
 
     if (bubble) {
@@ -206,9 +229,7 @@ function showTyping() {
 function hideTyping() {
 
     const bubble =
-        document.getElementById(
-            "typingBubble"
-        );
+        document.getElementById("typingBubble");
 
 
     if (bubble) {
@@ -225,28 +246,110 @@ function hideTyping() {
 // ENVIAR MENSAGEM
 // ==========================================
 
+
+// ==========================================
+// ENVIAR MENSAGEM
+// ==========================================
+
 async function sendMessage() {
 
-    const input =
-        document.getElementById(
-            "userInput"
-        );
+    console.log("=================================");
+    console.log("SEND MESSAGE FOI CHAMADO");
+    console.log("=================================");
 
+
+    const input =
+        document.getElementById("userInput");
 
     const chatbox =
-        document.getElementById(
-            "chatbox"
+        document.getElementById("chatbox");
+
+    const fileInput =
+        document.getElementById("fileInput");
+
+
+    console.log("input:", input);
+    console.log("fileInput:", fileInput);
+
+
+    if (!input) {
+
+        console.error(
+            "ERRO: elemento #userInput não encontrado."
         );
 
+        return;
+    }
 
-    const message =
+
+    if (!chatbox) {
+
+        console.error(
+            "ERRO: elemento #chatbox não encontrado."
+        );
+
+        return;
+    }
+
+
+    // PEGAR A PERGUNTA
+
+    const pergunta =
         input.value.trim();
 
 
-    if (!message) return;
+    console.log(
+        "PERGUNTA CAPTURADA:",
+        JSON.stringify(pergunta)
+    );
 
 
-    // Remove mensagem inicial
+    // PEGAR ARQUIVO
+
+    let arquivo = null;
+
+
+    if (
+        fileInput &&
+        fileInput.files &&
+        fileInput.files.length > 0
+    ) {
+
+        arquivo =
+            fileInput.files[0];
+
+    }
+
+
+    console.log(
+        "ARQUIVO:",
+        arquivo
+            ? arquivo.name
+            : "Nenhum arquivo"
+    );
+
+
+    // ================================
+    // VERIFICAR PERGUNTA
+    // ================================
+
+    if (!pergunta) {
+
+        console.log(
+            "A pergunta está vazia."
+        );
+
+        showError(
+            "Digite uma pergunta."
+        );
+
+        return;
+    }
+
+
+    // ================================
+    // REMOVER MENSAGEM DE BOAS-VINDAS
+    // ================================
 
     const welcome =
         document.getElementById(
@@ -261,9 +364,9 @@ async function sendMessage() {
     }
 
 
-    // ======================================
-    // MENSAGEM DO USUÁRIO
-    // ======================================
+    // ================================
+    // MOSTRAR PERGUNTA DO USUÁRIO
+    // ================================
 
     const userDiv =
         document.createElement("div");
@@ -274,11 +377,27 @@ async function sendMessage() {
 
 
     userDiv.innerHTML =
-        `<b>Você:</b><br>${escapeHtml(message)}`;
+        `<b>Você:</b><br>
+        ${escapeHtml(pergunta)}`;
 
 
-    chatbox.appendChild(userDiv);
+    if (arquivo) {
 
+        userDiv.innerHTML +=
+            `<br>
+            <small>
+                📎 ${escapeHtml(arquivo.name)}
+            </small>`;
+
+    }
+
+
+    chatbox.appendChild(
+        userDiv
+    );
+
+
+    // LIMPAR INPUT
 
     input.value = "";
 
@@ -288,41 +407,157 @@ async function sendMessage() {
 
     try {
 
-        const response =
-            await fetch("/chat", {
-
-                method: "POST",
-
-                headers: {
-
-                    "Content-Type":
-                        "application/json",
-
-                    "Authorization":
-                        "Bearer " +
-                        localStorage.getItem(
-                            "token"
-                        )
-
-                },
-
-                body: JSON.stringify({
-
-                    message,
-
-                    sessionId:
-                        currentSessionId
-
-                })
-
-            });
+        let response;
 
 
-        // ==================================
-        // TOKEN INVÁLIDO
-        // ==================================
+        // ==================================================
+        // PDF / TXT
+        // ==================================================
 
-        if (response.status === 401) {
+        if (arquivo) {
+
+            console.log(
+                "================================="
+            );
+
+            console.log(
+                "ENVIANDO DOCUMENTO"
+            );
+
+            console.log(
+                "================================="
+            );
+
+
+            const formData =
+                new FormData();
+
+
+            formData.append(
+                "documento",
+                arquivo
+            );
+
+
+            formData.append(
+                "pergunta",
+                pergunta
+            );
+
+
+            console.log(
+                "Arquivo enviado:",
+                arquivo.name
+            );
+
+
+            console.log(
+                "Pergunta enviada:",
+                pergunta
+            );
+
+
+            response =
+                await fetch(
+                    "/api/perguntar-documento",
+                    {
+
+                        method: "POST",
+
+                        headers: {
+
+                            Authorization:
+                                "Bearer " +
+                                localStorage.getItem(
+                                    "token"
+                                )
+
+                        },
+
+                        body: formData
+
+                    }
+                );
+
+        }
+
+
+        // ==================================================
+        // CHAT NORMAL
+        // ==================================================
+
+        else {
+
+            console.log(
+                "Enviando mensagem normal..."
+            );
+
+
+            response =
+                await fetch(
+                    "/chat",
+                    {
+
+                        method: "POST",
+
+                        headers: {
+
+                            "Content-Type":
+                                "application/json",
+
+                            Authorization:
+                                "Bearer " +
+                                localStorage.getItem(
+                                    "token"
+                                )
+
+                        },
+
+                        body:
+                            JSON.stringify({
+
+                                message:
+                                    pergunta,
+
+                                sessionId:
+                                    currentSessionId
+
+                            })
+
+                    }
+                );
+
+        }
+
+
+        console.log(
+            "STATUS DO SERVIDOR:",
+            response.status
+        );
+
+
+        // Tentar ler resposta
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "RESPOSTA DO SERVIDOR:",
+            data
+        );
+
+
+        hideTyping();
+
+
+        // ================================
+        // TOKEN EXPIRADO
+        // ================================
+
+        if (
+            response.status === 401
+        ) {
 
             logout();
 
@@ -331,61 +566,136 @@ async function sendMessage() {
         }
 
 
-        const data =
-            await response.json();
+        // ==================================================
+        // RESPOSTA DO DOCUMENTO
+        // ==================================================
+
+        if (arquivo) {
+
+            if (
+                response.ok &&
+                data.resposta
+            ) {
+
+                const botDiv =
+                    document.createElement(
+                        "div"
+                    );
 
 
-        hideTyping();
+                botDiv.className =
+                    "message bot";
 
 
-        // ==================================
-        // RESPOSTA DO BOT
-        // ==================================
+                botDiv.innerHTML =
+                    `<b>NathanBot:</b><br>
+                    ${escapeHtml(
+                        data.resposta
+                    )}`;
 
-        if (data.reply) {
 
-            const botDiv =
-                document.createElement(
-                    "div"
+                chatbox.appendChild(
+                    botDiv
                 );
 
 
-            botDiv.className =
-                "message bot";
+                console.log(
+                    "Documento respondido com sucesso."
+                );
 
 
-            botDiv.innerHTML =
-                `<b>Gemini:</b><br>${escapeHtml(data.reply)}`;
+            } else {
+
+                console.error(
+                    "Erro retornado pelo servidor:",
+                    data
+                );
 
 
-            chatbox.appendChild(
-                botDiv
-            );
+                showError(
+                    data.erro ||
+                    data.error ||
+                    "Erro ao analisar o documento."
+                );
+
+            }
+
+        }
 
 
-            loadAllChats();
+        // ==================================================
+        // RESPOSTA NORMAL
+        // ==================================================
+
+        else {
+
+            if (
+                response.ok &&
+                data.reply
+            ) {
+
+                const botDiv =
+                    document.createElement(
+                        "div"
+                    );
 
 
-        } else {
+                botDiv.className =
+                    "message bot";
 
-            showError(
-                data.error ||
-                "Erro desconhecido."
-            );
+
+                botDiv.innerHTML =
+                    `<b>NathanBot:</b><br>
+                    ${escapeHtml(
+                        data.reply
+                    )}`;
+
+
+                chatbox.appendChild(
+                    botDiv
+                );
+
+
+                loadAllChats();
+
+
+            } else {
+
+                showError(
+                    data.error ||
+                    data.erro ||
+                    "Erro ao gerar resposta."
+                );
+
+            }
+
+        }
+
+
+        // ================================
+        // REMOVER ARQUIVO
+        // ================================
+
+        if (arquivo) {
+
+            removeSelectedFile();
 
         }
 
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "ERRO AO ENVIAR:",
+            error
+        );
 
 
         hideTyping();
 
 
         showError(
-            "Conexão falhou."
+            "Não foi possível conectar ao servidor."
         );
 
     }
@@ -393,6 +703,50 @@ async function sendMessage() {
 
     chatbox.scrollTop =
         chatbox.scrollHeight;
+
+}
+
+
+
+
+// ==========================================
+// REMOVER ARQUIVO SELECIONADO
+// ==========================================
+
+function removeSelectedFile() {
+
+    const fileInput =
+        document.getElementById("fileInput");
+
+
+    const selectedFile =
+        document.getElementById("selectedFile");
+
+
+    const selectedFileName =
+        document.getElementById("selectedFileName");
+
+
+    if (fileInput) {
+
+        fileInput.value = "";
+
+    }
+
+
+    if (selectedFileName) {
+
+        selectedFileName.textContent = "";
+
+    }
+
+
+    if (selectedFile) {
+
+        selectedFile.style.display =
+            "none";
+
+    }
 
 }
 
@@ -423,15 +777,14 @@ function escapeHtml(text) {
 function showError(text) {
 
     const chatbox =
-        document.getElementById(
-            "chatbox"
-        );
+        document.getElementById("chatbox");
+
+
+    if (!chatbox) return;
 
 
     const error =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
 
     error.className =
@@ -446,6 +799,10 @@ function showError(text) {
         error
     );
 
+
+    chatbox.scrollTop =
+        chatbox.scrollHeight;
+
 }
 
 
@@ -459,6 +816,9 @@ async function loadAllChats() {
         document.getElementById(
             "historyContent"
         );
+
+
+    if (!historyContent) return;
 
 
     try {
@@ -547,7 +907,10 @@ async function loadAllChats() {
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "Erro ao carregar chats:",
+            error
+        );
 
     }
 
@@ -570,6 +933,9 @@ async function loadSpecificChat(
         document.getElementById(
             "chatbox"
         );
+
+
+    if (!chatbox) return;
 
 
     hideTyping();
@@ -639,7 +1005,8 @@ async function loadSpecificChat(
 
 
                 div.innerHTML =
-                    `<b>${nome}:</b><br>${escapeHtml(msg.text)}`;
+                    `<b>${nome}:</b><br>
+                    ${escapeHtml(msg.text)}`;
 
 
                 chatbox.appendChild(
@@ -732,6 +1099,7 @@ async function clearCurrentHistory() {
 
         console.error(error);
 
+
         showError(
             "Erro ao apagar conversa."
         );
@@ -751,9 +1119,11 @@ function logout() {
         "token"
     );
 
+
     localStorage.removeItem(
         "user"
     );
+
 
     localStorage.removeItem(
         "sessionId"
@@ -784,13 +1154,119 @@ function toggleSidebar() {
         );
 
 
-    sidebar.classList.toggle(
-        "active"
-    );
+    if (sidebar) {
+
+        sidebar.classList.toggle(
+            "active"
+        );
+
+    }
 
 
-    overlay.classList.toggle(
-        "active"
-    );
+    if (overlay) {
+
+        overlay.classList.toggle(
+            "active"
+        );
+
+    }
 
 }
+
+// ==========================================
+// TESTE DO BOTÃO
+// ==========================================
+
+console.log("=================================");
+console.log("SCRIPT.JS CARREGADO");
+console.log("=================================");
+
+
+// ==========================================
+// MONITORAR O INPUT
+// ==========================================
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const input =
+        document.getElementById("userInput");
+
+    const fileInput =
+        document.getElementById("fileInput");
+
+
+    console.log(
+        "userInput encontrado:",
+        !!input
+    );
+
+
+    console.log(
+        "fileInput encontrado:",
+        !!fileInput
+    );
+
+
+    if (input) {
+
+        input.addEventListener(
+            "input",
+            function () {
+
+                console.log(
+                    "Texto digitado:",
+                    this.value
+                );
+
+            }
+        );
+
+    }
+
+
+    if (fileInput) {
+
+        fileInput.addEventListener(
+            "change",
+            function () {
+
+                console.log(
+                    "Arquivo selecionado:",
+                    this.files[0]
+                        ? this.files[0].name
+                        : "nenhum"
+                );
+
+
+                const selectedFile =
+                    document.getElementById(
+                        "selectedFile"
+                    );
+
+
+                const selectedFileName =
+                    document.getElementById(
+                        "selectedFileName"
+                    );
+
+
+                if (
+                    this.files.length > 0
+                ) {
+
+                    selectedFileName.textContent =
+                        "📄 " +
+                        this.files[0].name;
+
+
+                    selectedFile.style.display =
+                        "flex";
+
+                }
+
+            }
+        );
+
+    }
+
+});
